@@ -1,109 +1,92 @@
 /**
- * Card Component - Container avec ombre et bordures arrondies
+ * Card Component - Enhanced card with animations and variants
  */
 
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { colors, borderRadius, shadows, spacing } from '../theme';
+import Animated, { FadeIn, SlideInUp } from 'react-native-reanimated';
+import { colors, spacing, borderRadius, shadows } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
-  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
-  padding?: keyof typeof spacing;
-  style?: ViewStyle;
-  pressable?: boolean;
-  onPress?: () => void;
+  variant?: 'default' | 'elevated' | 'outline' | 'filled';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
   animated?: boolean;
+  animationDelay?: number;
+  style?: ViewStyle;
 }
 
 export function Card({
   children,
   variant = 'default',
-  padding = '4',
+  padding = 'md',
+  animated = false,
+  animationDelay = 0,
   style,
-  pressable = false,
-  onPress,
-  animated = true,
 }: CardProps) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const handlePressIn = () => {
-    if (animated && pressable) {
-      scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
-      opacity.value = withTiming(0.9, { duration: 100 });
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'elevated':
+        return {
+          backgroundColor: colors.white,
+          ...shadows.lg,
+        };
+      case 'outline':
+        return {
+          backgroundColor: colors.white,
+          borderWidth: 1,
+          borderColor: colors.border,
+          ...shadows.xs,
+        };
+      case 'filled':
+        return {
+          backgroundColor: colors.gray[50],
+          ...shadows.xs,
+        };
+      default:
+        return {
+          backgroundColor: colors.white,
+          ...shadows.md,
+        };
     }
   };
 
-  const handlePressOut = () => {
-    if (animated && pressable) {
-      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-      opacity.value = withTiming(1, { duration: 100 });
+  const getPaddingStyle = () => {
+    switch (padding) {
+      case 'none':
+        return {};
+      case 'sm':
+        return { padding: spacing['3'] };
+      case 'lg':
+        return { padding: spacing['6'] };
+      default:
+        return { padding: spacing['4'] };
     }
   };
 
-  const CardComponent = pressable ? Animated.View : View;
-  const cardStyle = [
-    styles.base,
-    styles[variant],
-    {
-      padding: spacing[padding],
-    },
-    pressable && animated && animatedStyle,
-    style,
-  ];
+  const CardComponent = animated ? Animated.View : View;
+  const animationProps = animated ? {
+    entering: FadeIn.delay(animationDelay).duration(400),
+  } : {};
 
-  if (pressable) {
-    return (
-      <Animated.View
-        style={cardStyle}
-        // @ts-ignore - React Native Reanimated typing issue
-        onTouchStart={handlePressIn}
-        onTouchEnd={handlePressOut}
-        onPress={onPress}
-      >
-        {children}
-      </Animated.View>
-    );
-  }
-
-  return <View style={cardStyle}>{children}</View>;
+  return (
+    <CardComponent
+      style={[
+        styles.card,
+        getVariantStyle(),
+        getPaddingStyle(),
+        style,
+      ]}
+      {...animationProps}
+    >
+      {children}
+    </CardComponent>
+  );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.white,
+  card: {
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-  },
-
-  default: {
-    ...shadows.sm,
-  },
-
-  elevated: {
-    ...shadows.lg,
-  },
-
-  outlined: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.none,
-  },
-
-  filled: {
-    backgroundColor: colors.gray[50],
-    ...shadows.none,
   },
 });
