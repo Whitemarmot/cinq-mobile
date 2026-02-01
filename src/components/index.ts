@@ -8,6 +8,10 @@ export { IconButton } from './IconButton';
 export { Icon } from './Icon';
 export { Card } from './Card';
 
+// Premium Components
+export { PremiumPaywall } from './PremiumPaywall';
+export { PremiumBadge, PremiumBadgeInline } from './PremiumBadge';
+
 // Animated Components
 export {
   FadeInView,

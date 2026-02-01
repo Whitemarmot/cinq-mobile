@@ -29,6 +29,7 @@ class ApiService {
       displayName: profile.display_name || undefined,
       avatarUrl: profile.avatar_url || undefined,
       status: profile.status,
+      isPremium: profile.is_premium || false,
       createdAt: profile.created_at,
     };
   }

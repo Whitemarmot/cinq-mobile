@@ -27,6 +27,7 @@ export interface Database {
           display_name: string | null;
           avatar_url: string | null;
           status: 'online' | 'offline' | 'busy';
+          is_premium: boolean;
           created_at: string;
           updated_at: string;
         };

@@ -9,6 +9,7 @@ export interface User {
   displayName?: string;
   avatarUrl?: string;
   status: 'online' | 'offline' | 'busy';
+  isPremium?: boolean;
   createdAt: string;
 }
 

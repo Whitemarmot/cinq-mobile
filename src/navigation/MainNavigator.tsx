@@ -6,7 +6,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, StyleSheet } from 'react-native';
-import { AppScreen, FeedScreen, ChatScreen, SettingsScreen } from '../screens';
+import { AppScreen, FeedScreen, ChatScreen, SettingsScreen, PremiumScreen } from '../screens';
 import { colors } from '../theme';
 
 // Types
@@ -19,6 +19,7 @@ export type MainStackParamList = {
   MainTabs: undefined;
   Chat: { conversationId: string; contactName: string };
   Settings: undefined;
+  Premium: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -84,6 +85,14 @@ export function MainNavigator() {
       <Stack.Screen 
         name="Settings" 
         component={SettingsScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen 
+        name="Premium" 
+        component={PremiumScreen}
         options={{
           animation: 'slide_from_bottom',
           presentation: 'modal',

@@ -1,13 +1,24 @@
 /**
- * Hook de gestion des contacts (les 5 slots)
+ * Hook de gestion des contacts (5 slots gratuit, 25 slots premium)
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { Contact, User } from '../types';
 
+// Constantes pour les limites
+export const FREE_SLOTS = 5;
+export const PREMIUM_SLOTS = 25;
+
+interface UseContactsOptions {
+  isPremium?: boolean;
+}
+
 interface UseContactsReturn {
-  contacts: (Contact | null)[]; // Tableau de 5 slots (0-4)
+  contacts: (Contact | null)[]; // Tableau de slots
+  filledSlots: number;
+  maxSlots: number;
+  canAddMore: boolean;
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -16,10 +27,28 @@ interface UseContactsReturn {
   searchUsers: (query: string) => Promise<User[]>;
 }
 
-export function useContacts(): UseContactsReturn {
-  const [contacts, setContacts] = useState<(Contact | null)[]>([null, null, null, null, null]);
+export function useContacts(options: UseContactsOptions = {}): UseContactsReturn {
+  const { isPremium = false } = options;
+  const maxSlots = isPremium ? PREMIUM_SLOTS : FREE_SLOTS;
+  
+  // Créer un tableau de slots vides
+  const emptySlots = useMemo(() => 
+    Array(maxSlots).fill(null) as (Contact | null)[], 
+    [maxSlots]
+  );
+  
+  const [contacts, setContacts] = useState<(Contact | null)[]>(emptySlots);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Calcul du nombre de slots remplis
+  const filledSlots = useMemo(() => 
+    contacts.filter(c => c !== null).length, 
+    [contacts]
+  );
+
+  // Peut-on encore ajouter des contacts ?
+  const canAddMore = filledSlots < maxSlots;
 
   const refresh = useCallback(async () => {
     try {
@@ -27,10 +56,10 @@ export function useContacts(): UseContactsReturn {
       setError(null);
       const data = await api.getContacts();
       
-      // Mapper les contacts dans leurs slots (1-5 -> 0-4)
-      const slots: (Contact | null)[] = [null, null, null, null, null];
+      // Mapper les contacts dans leurs slots (1-N -> 0-(N-1))
+      const slots: (Contact | null)[] = Array(maxSlots).fill(null);
       data.forEach(contact => {
-        if (contact.slot >= 1 && contact.slot <= 5) {
+        if (contact.slot >= 1 && contact.slot <= maxSlots) {
           slots[contact.slot - 1] = contact;
         }
       });
@@ -41,7 +70,7 @@ export function useContacts(): UseContactsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [maxSlots]);
 
   useEffect(() => {
     refresh();
@@ -84,6 +113,9 @@ export function useContacts(): UseContactsReturn {
 
   return {
     contacts,
+    filledSlots,
+    maxSlots,
+    canAddMore,
     isLoading,
     error,
     refresh,

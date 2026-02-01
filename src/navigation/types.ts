@@ -23,6 +23,7 @@ export type MainStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   Chat: { conversationId: string; contactName: string };
   Settings: undefined;
+  Premium: undefined;
 };
 
 // Screen Props

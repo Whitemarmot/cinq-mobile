@@ -15,9 +15,10 @@ import {
 import Animated, { FadeInUp, FadeInDown, SlideInUp } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing } from '../theme';
-import { Header, Button } from '../components';
+import { Header, Button, PremiumBadgeInline } from '../components';
 import { FadeInView, StaggeredList } from '../components/AnimatedComponents';
-import { useAuth } from '../hooks';
+import { useAuth, usePremium } from '../hooks';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 interface SettingItemProps {
   icon: string;
@@ -45,8 +46,9 @@ function SettingItem({ icon, title, subtitle, onPress, danger }: SettingItemProp
 }
 
 export function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, logout } = useAuth();
+  const { isPremium, maxSlots, restore } = usePremium();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleBack = () => {
@@ -83,6 +85,19 @@ export function SettingsScreen() {
     Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
   };
 
+  const handlePremium = () => {
+    navigation.navigate('Premium');
+  };
+
+  const handleRestorePurchases = async () => {
+    const result = await restore();
+    if (result.isPremium) {
+      Alert.alert('✅ Restauré', 'Ton premium a été restauré avec succès !');
+    } else {
+      Alert.alert('Aucun achat', 'Aucun achat premium trouvé pour ce compte.');
+    }
+  };
+
   const handleHelp = () => {
     Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
   };
@@ -90,7 +105,7 @@ export function SettingsScreen() {
   const handleAbout = () => {
     Alert.alert(
       'À propos de Cinq',
-      'Cinq v1.0.0\n\nL\'app pour rester connecté avec tes 5 personnes les plus proches.\n\n❤️ Made with love'
+      `Cinq v1.0.0\n\nL'app pour rester connecté avec tes ${maxSlots} personnes les plus proches.\n\n❤️ Made with love`
     );
   };
 
@@ -113,19 +128,54 @@ export function SettingsScreen() {
           entering={FadeInDown.delay(100).duration(400)}
           style={styles.profileSection}
         >
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(user?.displayName || user?.username || 'U')[0].toUpperCase()}
-            </Text>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {(user?.displayName || user?.username || 'U')[0].toUpperCase()}
+              </Text>
+            </View>
+            {isPremium && (
+              <View style={styles.premiumBadgePosition}>
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumBadgeText}>5²</Text>
+                </View>
+              </View>
+            )}
           </View>
-          <Text style={styles.profileName}>
-            {user?.displayName || user?.username}
-          </Text>
+          <View style={styles.profileNameRow}>
+            <Text style={styles.profileName}>
+              {user?.displayName || user?.username}
+            </Text>
+            {isPremium && <PremiumBadgeInline />}
+          </View>
           <Text style={styles.profileEmail}>{user?.email}</Text>
+          <Text style={styles.slotInfo}>
+            {isPremium ? '25 slots disponibles' : '5 slots gratuits'}
+          </Text>
         </Animated.View>
 
+        {/* Premium Section */}
+        {!isPremium && (
+          <FadeInView delay={200}>
+            <TouchableOpacity 
+              style={styles.premiumBanner} 
+              onPress={handlePremium}
+              activeOpacity={0.8}
+            >
+              <View style={styles.premiumBannerContent}>
+                <Text style={styles.premiumBannerIcon}>✨</Text>
+                <View style={styles.premiumBannerText}>
+                  <Text style={styles.premiumBannerTitle}>Passe au 5² Premium</Text>
+                  <Text style={styles.premiumBannerSubtitle}>25 slots • 4.99€ à vie</Text>
+                </View>
+              </View>
+              <Text style={styles.premiumBannerChevron}>›</Text>
+            </TouchableOpacity>
+          </FadeInView>
+        )}
+
         {/* Settings Groups */}
-        <FadeInView delay={200}>
+        <FadeInView delay={250}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Compte</Text>
             <SettingItem
@@ -150,6 +200,33 @@ export function SettingsScreen() {
         </FadeInView>
 
         <FadeInView delay={300}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Premium</Text>
+            {isPremium ? (
+              <SettingItem
+                icon="💎"
+                title="5² Premium actif"
+                subtitle="Merci pour ton soutien !"
+                onPress={handlePremium}
+              />
+            ) : (
+              <SettingItem
+                icon="⭐"
+                title="Débloquer 5² Premium"
+                subtitle="25 slots pour 4.99€ à vie"
+                onPress={handlePremium}
+              />
+            )}
+            <SettingItem
+              icon="🔄"
+              title="Restaurer mes achats"
+              subtitle="Si tu as déjà acheté"
+              onPress={handleRestorePurchases}
+            />
+          </View>
+        </FadeInView>
+
+        <FadeInView delay={350}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Aide</Text>
             <SettingItem
@@ -176,7 +253,7 @@ export function SettingsScreen() {
           </View>
         </FadeInView>
 
-        <FadeInView delay={500}>
+        <FadeInView delay={450}>
           <Text style={styles.version}>Cinq v1.0.0</Text>
         </FadeInView>
       </ScrollView>
@@ -202,6 +279,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: spacing.md,
+  },
   avatar: {
     width: 80,
     height: 80,
@@ -209,12 +290,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
   },
   avatarText: {
     fontSize: 32,
     fontWeight: '700',
     color: colors.white,
+  },
+  premiumBadgePosition: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+  },
+  premiumBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.violet,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   profileName: {
     ...typography.h2,
@@ -224,6 +328,50 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  slotInfo: {
+    ...typography.bodySmall,
+    color: colors.primary,
+    marginTop: spacing.xs,
+    fontWeight: '500',
+  },
+  
+  // Premium Banner
+  premiumBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primary,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 16,
+  },
+  premiumBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  premiumBannerIcon: {
+    fontSize: 24,
+    marginRight: spacing.md,
+  },
+  premiumBannerText: {},
+  premiumBannerTitle: {
+    ...typography.body,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  premiumBannerSubtitle: {
+    ...typography.bodySmall,
+    color: colors.white,
+    opacity: 0.9,
+  },
+  premiumBannerChevron: {
+    fontSize: 24,
+    color: colors.white,
+    opacity: 0.8,
   },
   section: {
     paddingTop: spacing.lg,
