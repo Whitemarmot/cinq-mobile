@@ -139,9 +139,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
   },
   logo: {
-    fontSize: 48,
-    fontWeight: '700',
+    ...typography.display1,
+    fontSize: 56,
+    fontWeight: '800',
     color: colors.primary,
+    letterSpacing: -2,
   },
   subtitle: {
     ...typography.body,

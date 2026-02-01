@@ -7,8 +7,8 @@ import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, typography, spacing } from '../theme';
-import { Header, ContactSlot } from '../components';
+import { colors, typography, spacing, responsive, shadows, borderRadius } from '../theme';
+import { Header, ContactSlot, Card, Icon, IconButton } from '../components';
 import { ScaleInView, PulseView, AnimatedPressable } from '../components/AnimatedComponents';
 import { useContacts, useAuth } from '../hooks';
 import type { MainStackParamList } from '../navigation/types';
@@ -37,7 +37,7 @@ export function AppScreen() {
     <SafeAreaView style={styles.container}>
       <Header
         title="cinq"
-        rightIcon={<Text style={styles.settingsIcon}>⚙️</Text>}
+        rightIcon={<Icon name="settings" size={24} color={colors.text} />}
         onRightPress={handleSettingsPress}
       />
 
@@ -55,57 +55,62 @@ export function AppScreen() {
         <View style={styles.circleContainer}>
           {/* Slot 1 - Top */}
           <ScaleInView delay={100} style={[styles.slotPosition, styles.slot1]}>
-            <AnimatedPressable onPress={() => handleContactPress(1)}>
-              <ContactSlot
-                slot={1}
-                contact={contacts[0]}
-                size="large"
-              />
-            </AnimatedPressable>
+            <ContactSlot
+              slot={1}
+              contact={contacts[0]}
+              size="large"
+              animateIn={true}
+              animationDelay={1}
+              onPress={() => handleContactPress(1)}
+            />
           </ScaleInView>
 
           {/* Slot 2 - Top Right */}
           <ScaleInView delay={200} style={[styles.slotPosition, styles.slot2]}>
-            <AnimatedPressable onPress={() => handleContactPress(2)}>
-              <ContactSlot
-                slot={2}
-                contact={contacts[1]}
-                size="large"
-              />
-            </AnimatedPressable>
+            <ContactSlot
+              slot={2}
+              contact={contacts[1]}
+              size="large"
+              animateIn={true}
+              animationDelay={2}
+              onPress={() => handleContactPress(2)}
+            />
           </ScaleInView>
 
           {/* Slot 3 - Bottom Right */}
           <ScaleInView delay={300} style={[styles.slotPosition, styles.slot3]}>
-            <AnimatedPressable onPress={() => handleContactPress(3)}>
-              <ContactSlot
-                slot={3}
-                contact={contacts[2]}
-                size="large"
-              />
-            </AnimatedPressable>
+            <ContactSlot
+              slot={3}
+              contact={contacts[2]}
+              size="large"
+              animateIn={true}
+              animationDelay={3}
+              onPress={() => handleContactPress(3)}
+            />
           </ScaleInView>
 
           {/* Slot 4 - Bottom Left */}
           <ScaleInView delay={400} style={[styles.slotPosition, styles.slot4]}>
-            <AnimatedPressable onPress={() => handleContactPress(4)}>
-              <ContactSlot
-                slot={4}
-                contact={contacts[3]}
-                size="large"
-              />
-            </AnimatedPressable>
+            <ContactSlot
+              slot={4}
+              contact={contacts[3]}
+              size="large"
+              animateIn={true}
+              animationDelay={4}
+              onPress={() => handleContactPress(4)}
+            />
           </ScaleInView>
 
           {/* Slot 5 - Top Left */}
           <ScaleInView delay={500} style={[styles.slotPosition, styles.slot5]}>
-            <AnimatedPressable onPress={() => handleContactPress(5)}>
-              <ContactSlot
-                slot={5}
-                contact={contacts[4]}
-                size="large"
-              />
-            </AnimatedPressable>
+            <ContactSlot
+              slot={5}
+              contact={contacts[4]}
+              size="large"
+              animateIn={true}
+              animationDelay={5}
+              onPress={() => handleContactPress(5)}
+            />
           </ScaleInView>
 
           {/* Center - User avatar or logo */}
@@ -133,26 +138,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: spacing.lg,
+    paddingTop: spacing['6'],
+    paddingHorizontal: spacing['4'],
   },
   greeting: {
-    ...typography.h2,
+    ...typography.h1,
     color: colors.text,
     textAlign: 'center',
+    marginBottom: spacing['2'],
   },
   subtitle: {
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+    marginBottom: spacing['10'],
     textAlign: 'center',
   },
-  settingsIcon: {
-    fontSize: 24,
-  },
   circleContainer: {
-    width: 300,
-    height: 300,
+    width: responsive.isSmallScreen ? 280 : 320,
+    height: responsive.isSmallScreen ? 280 : 320,
     position: 'relative',
   },
   slotPosition: {
@@ -161,41 +164,43 @@ const styles = StyleSheet.create({
   slot1: {
     top: 0,
     left: '50%',
-    marginLeft: -40,
+    marginLeft: responsive.isSmallScreen ? -36 : -40,
   },
   slot2: {
-    top: 60,
-    right: 0,
+    top: responsive.isSmallScreen ? 55 : 60,
+    right: responsive.isSmallScreen ? -5 : 0,
   },
   slot3: {
-    bottom: 30,
-    right: 20,
+    bottom: responsive.isSmallScreen ? 25 : 30,
+    right: responsive.isSmallScreen ? 15 : 20,
   },
   slot4: {
-    bottom: 30,
-    left: 20,
+    bottom: responsive.isSmallScreen ? 25 : 30,
+    left: responsive.isSmallScreen ? 15 : 20,
   },
   slot5: {
-    top: 60,
-    left: 0,
+    top: responsive.isSmallScreen ? 55 : 60,
+    left: responsive.isSmallScreen ? -5 : 0,
   },
   center: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginTop: -30,
-    marginLeft: -30,
+    marginTop: responsive.isSmallScreen ? -28 : -32,
+    marginLeft: responsive.isSmallScreen ? -28 : -32,
   },
   centerCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
+    width: responsive.isSmallScreen ? 56 : 64,
+    height: responsive.isSmallScreen ? 56 : 64,
+    borderRadius: responsive.isSmallScreen ? 28 : 32,
+    backgroundColor: colors.violet,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.lg,
   },
   centerText: {
     ...typography.h2,
     color: colors.white,
+    fontWeight: '700',
   },
 });

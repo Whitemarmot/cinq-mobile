@@ -4,15 +4,32 @@
  */
 
 export const colors = {
-  // Primary
-  primary: '#6366F1',
+  // Primary palette - Indigo/Violet/Purple
+  primary: '#6366F1', // indigo
   primaryLight: '#818CF8',
   primaryDark: '#4F46E5',
   
-  // Secondary
+  // Violet palette
+  violet: '#8B5CF6',
+  violetLight: '#A78BFA',
+  violetDark: '#7C3AED',
+  
+  // Purple palette
+  purple: '#A855F7',
+  purpleLight: '#C084FC',
+  purpleDark: '#9333EA',
+  
+  // Secondary (keeping pink for contrast)
   secondary: '#EC4899',
   secondaryLight: '#F472B6',
   secondaryDark: '#DB2777',
+  
+  // Gradient colors for modern UI
+  gradient: {
+    primary: ['#6366F1', '#8B5CF6', '#A855F7'],
+    secondary: ['#8B5CF6', '#A855F7', '#EC4899'],
+    subtle: ['#F8FAFC', '#E2E8F0'],
+  },
   
   // Neutrals
   white: '#FFFFFF',

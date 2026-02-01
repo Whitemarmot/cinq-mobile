@@ -1,11 +1,21 @@
 /**
- * ContactSlot Component - Représente un des 5 slots de contact
+ * Enhanced ContactSlot Component avec animations
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withSequence,
+  interpolate,
+} from 'react-native-reanimated';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import { Contact } from '../types';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export interface ContactSlotProps {
   slot: number;
@@ -13,6 +23,9 @@ export interface ContactSlotProps {
   onPress?: () => void;
   onLongPress?: () => void;
   size?: 'small' | 'medium' | 'large';
+  animateIn?: boolean;
+  animationDelay?: number;
+  showPulse?: boolean; // Pour animer les contacts en ligne
 }
 
 const SIZES = {
@@ -27,9 +40,60 @@ export function ContactSlot({
   onPress,
   onLongPress,
   size = 'medium',
+  animateIn = false,
+  animationDelay = 0,
+  showPulse = true,
 }: ContactSlotProps) {
   const dimension = SIZES[size];
   const isEmpty = !contact;
+  const isOnline = contact?.contact.status === 'online';
+
+  // Animation values
+  const scale = useSharedValue(animateIn ? 0 : 1);
+  const opacity = useSharedValue(animateIn ? 0 : 1);
+  const pulseScale = useSharedValue(1);
+  const statusPulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (animateIn) {
+      // Entry animation
+      const delay = animationDelay * 100;
+      scale.value = withSpring(1, { 
+        damping: 15, 
+        stiffness: 200,
+        delay 
+      });
+      opacity.value = withTiming(1, { duration: 300, delay });
+    }
+
+    // Pulse animation for online contacts
+    if (isOnline && showPulse) {
+      statusPulse.value = withSequence(
+        withTiming(1.2, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
+      );
+    }
+  }, [animateIn, animationDelay, isOnline, showPulse]);
+
+  // Press animation
+  const handlePressIn = () => {
+    pulseScale.value = withSpring(0.95, { damping: 15, stiffness: 200 });
+  };
+
+  const handlePressOut = () => {
+    pulseScale.value = withSpring(1, { damping: 15, stiffness: 200 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value * pulseScale.value },
+    ],
+  }));
+
+  const statusAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: statusPulse.value }],
+  }));
 
   const getStatusColor = () => {
     if (!contact) return colors.gray[300];
@@ -40,20 +104,42 @@ export function ContactSlot({
     }
   };
 
+  const getSlotColor = () => {
+    const colorMap = [
+      colors.primary,    // Slot 1
+      colors.violet,     // Slot 2
+      colors.purple,     // Slot 3
+      colors.secondary,  // Slot 4
+      colors.primary,    // Slot 5
+    ];
+    return colorMap[slot - 1] || colors.primary;
+  };
+
   return (
-    <TouchableOpacity
+    <AnimatedTouchableOpacity
       onPress={onPress}
       onLongPress={onLongPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={[
         styles.container,
-        { width: dimension, height: dimension },
+        animatedStyle,
       ]}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       {isEmpty ? (
-        <View style={[styles.emptySlot, { width: dimension, height: dimension }]}>
-          <Text style={styles.slotNumber}>{slot}</Text>
-          <Text style={styles.addText}>+</Text>
+        <View style={[
+          styles.emptySlot, 
+          { 
+            width: dimension, 
+            height: dimension,
+            borderColor: getSlotColor(),
+          }
+        ]}>
+          <View style={[styles.slotBadgeEmpty, { backgroundColor: getSlotColor() }]}>
+            <Text style={styles.slotBadgeText}>{slot}</Text>
+          </View>
+          <Text style={[styles.addText, { color: getSlotColor() }]}>+</Text>
         </View>
       ) : (
         <View style={styles.filledSlot}>
@@ -63,20 +149,45 @@ export function ContactSlot({
               style={[styles.avatar, { width: dimension, height: dimension }]}
             />
           ) : (
-            <View style={[styles.avatarPlaceholder, { width: dimension, height: dimension }]}>
+            <View style={[
+              styles.avatarPlaceholder, 
+              { 
+                width: dimension, 
+                height: dimension,
+                backgroundColor: getSlotColor(),
+              }
+            ]}>
               <Text style={styles.avatarInitial}>
                 {(contact.nickname || contact.contact.displayName || contact.contact.username)[0].toUpperCase()}
               </Text>
             </View>
           )}
           
-          {/* Status indicator */}
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
+          {/* Status indicator with animation */}
+          <Animated.View 
+            style={[
+              styles.statusDot, 
+              { backgroundColor: getStatusColor() },
+              isOnline ? statusAnimatedStyle : {}
+            ]} 
+          />
           
           {/* Slot number badge */}
-          <View style={styles.slotBadge}>
+          <View style={[styles.slotBadge, { backgroundColor: getSlotColor() }]}>
             <Text style={styles.slotBadgeText}>{slot}</Text>
           </View>
+          
+          {/* Online glow effect */}
+          {isOnline && (
+            <View style={[
+              styles.onlineGlow,
+              { 
+                width: dimension + 8, 
+                height: dimension + 8,
+                borderColor: getStatusColor(),
+              }
+            ]} />
+          )}
         </View>
       )}
       
@@ -85,81 +196,111 @@ export function ContactSlot({
           {contact.nickname || contact.contact.displayName || contact.contact.username}
         </Text>
       )}
-    </TouchableOpacity>
+    </AnimatedTouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    paddingVertical: spacing['2'],
   },
+  
   emptySlot: {
     borderRadius: borderRadius.full,
     borderWidth: 2,
-    borderColor: colors.gray[300],
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.gray[50],
+    position: 'relative',
   },
-  slotNumber: {
-    ...typography.caption,
-    color: colors.gray[400],
+  
+  slotBadgeEmpty: {
     position: 'absolute',
-    top: 4,
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.md,
   },
+  
   addText: {
-    ...typography.h3,
-    color: colors.gray[400],
+    ...typography.h2,
+    fontWeight: '300',
   },
+  
   filledSlot: {
     position: 'relative',
   },
+  
   avatar: {
     borderRadius: borderRadius.full,
+    ...shadows.md,
   },
+  
   avatarPlaceholder: {
     borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.md,
   },
+  
   avatarInitial: {
     ...typography.h3,
     color: colors.white,
+    fontWeight: '600',
   },
+  
   statusDot: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
+    bottom: 4,
+    right: 4,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 3,
     borderColor: colors.white,
-  },
-  slotBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
     ...shadows.sm,
   },
+  
+  slotBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  
   slotBadgeText: {
     ...typography.caption,
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 11,
   },
+  
+  onlineGlow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    borderRadius: borderRadius.full,
+    borderWidth: 2,
+    opacity: 0.3,
+  },
+  
   name: {
     ...typography.caption,
     color: colors.text,
-    marginTop: spacing.xs,
-    maxWidth: 80,
+    marginTop: spacing['2'],
+    maxWidth: 88,
     textAlign: 'center',
+    fontWeight: '500',
   },
 });

@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 56,
-    paddingHorizontal: spacing.md,
+    height: 60,
+    paddingHorizontal: spacing['4'],
   },
   left: {
     width: 44,
@@ -76,12 +76,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   title: {
-    ...typography.h4,
+    ...typography.h5,
     color: colors.text,
     flex: 1,
     textAlign: 'center',
+    fontWeight: '600',
   },
   iconButton: {
-    padding: spacing.xs,
+    padding: spacing['2'],
+    borderRadius: borderRadius.md,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
