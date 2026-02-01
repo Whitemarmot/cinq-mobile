@@ -1,24 +1,23 @@
 /**
- * Settings Screen
+ * Settings Screen avec animations
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  SafeAreaView,
   ScrollView,
+  TouchableOpacity,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, spacing, borderRadius } from '../theme';
-import { Header } from '../components';
+import Animated, { FadeInUp, FadeInDown, SlideInUp } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
+import { colors, typography, spacing } from '../theme';
+import { Header, Button } from '../components';
+import { FadeInView, StaggeredList } from '../components/AnimatedComponents';
 import { useAuth } from '../hooks';
-
-interface SettingsScreenProps {
-  onBack: () => void;
-}
 
 interface SettingItemProps {
   icon: string;
@@ -36,15 +35,23 @@ function SettingItem({ icon, title, subtitle, onPress, danger }: SettingItemProp
         <Text style={[styles.settingTitle, danger && styles.dangerText]}>
           {title}
         </Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        {subtitle && (
+          <Text style={styles.settingSubtitle}>{subtitle}</Text>
+        )}
       </View>
       <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 }
 
-export function SettingsScreen({ onBack }: SettingsScreenProps) {
+export function SettingsScreen() {
+  const navigation = useNavigation();
   const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -55,112 +62,123 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         {
           text: 'Déconnexion',
           style: 'destructive',
-          onPress: () => logout(),
+          onPress: async () => {
+            setIsLoggingOut(true);
+            await logout();
+          },
         },
       ]
     );
   };
 
+  const handleEditProfile = () => {
+    Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
+  };
+
+  const handleNotifications = () => {
+    Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
+  };
+
+  const handlePrivacy = () => {
+    Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
+  };
+
+  const handleHelp = () => {
+    Alert.alert('Bientôt', 'Cette fonctionnalité arrive bientôt !');
+  };
+
+  const handleAbout = () => {
+    Alert.alert(
+      'À propos de Cinq',
+      'Cinq v1.0.0\n\nL\'app pour rester connecté avec tes 5 personnes les plus proches.\n\n❤️ Made with love'
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Header
-        title="Paramètres"
-        leftIcon={<Text style={styles.backIcon}>←</Text>}
-        onLeftPress={onBack}
-      />
+      <Animated.View entering={SlideInUp.duration(300)}>
+        <Header
+          title="Paramètres"
+          leftIcon={<Text style={styles.backIcon}>×</Text>}
+          onLeftPress={handleBack}
+        />
+      </Animated.View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Section */}
-        <View style={styles.profileSection}>
+        <Animated.View 
+          entering={FadeInDown.delay(100).duration(400)}
+          style={styles.profileSection}
+        >
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
               {(user?.displayName || user?.username || 'U')[0].toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.userName}>
+          <Text style={styles.profileName}>
             {user?.displayName || user?.username}
           </Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
-        </View>
+          <Text style={styles.profileEmail}>{user?.email}</Text>
+        </Animated.View>
 
-        {/* Account Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Compte</Text>
-          
-          <SettingItem
-            icon="👤"
-            title="Modifier le profil"
-            subtitle="Nom, photo, bio"
-            onPress={() => {/* TODO */}}
-          />
-          
-          <SettingItem
-            icon="🔒"
-            title="Confidentialité"
-            onPress={() => {/* TODO */}}
-          />
-          
-          <SettingItem
-            icon="🔔"
-            title="Notifications"
-            onPress={() => {/* TODO */}}
-          />
-        </View>
+        {/* Settings Groups */}
+        <FadeInView delay={200}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Compte</Text>
+            <SettingItem
+              icon="👤"
+              title="Modifier le profil"
+              subtitle="Photo, nom, bio"
+              onPress={handleEditProfile}
+            />
+            <SettingItem
+              icon="🔔"
+              title="Notifications"
+              subtitle="Gérer les alertes"
+              onPress={handleNotifications}
+            />
+            <SettingItem
+              icon="🔒"
+              title="Confidentialité"
+              subtitle="Qui peut te voir"
+              onPress={handlePrivacy}
+            />
+          </View>
+        </FadeInView>
 
-        {/* Preferences */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Préférences</Text>
-          
-          <SettingItem
-            icon="🎨"
-            title="Apparence"
-            subtitle="Thème clair/sombre"
-            onPress={() => {/* TODO */}}
-          />
-          
-          <SettingItem
-            icon="🌍"
-            title="Langue"
-            subtitle="Français"
-            onPress={() => {/* TODO */}}
-          />
-        </View>
+        <FadeInView delay={300}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Aide</Text>
+            <SettingItem
+              icon="❓"
+              title="Centre d'aide"
+              onPress={handleHelp}
+            />
+            <SettingItem
+              icon="ℹ️"
+              title="À propos"
+              onPress={handleAbout}
+            />
+          </View>
+        </FadeInView>
 
-        {/* Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          
-          <SettingItem
-            icon="❓"
-            title="Aide"
-            onPress={() => {/* TODO */}}
-          />
-          
-          <SettingItem
-            icon="📝"
-            title="Feedback"
-            onPress={() => {/* TODO */}}
-          />
-          
-          <SettingItem
-            icon="📄"
-            title="Conditions d'utilisation"
-            onPress={() => {/* TODO */}}
-          />
-        </View>
+        <FadeInView delay={400}>
+          <View style={styles.section}>
+            <SettingItem
+              icon="🚪"
+              title="Déconnexion"
+              onPress={handleLogout}
+              danger
+            />
+          </View>
+        </FadeInView>
 
-        {/* Danger Zone */}
-        <View style={styles.section}>
-          <SettingItem
-            icon="🚪"
-            title="Déconnexion"
-            onPress={handleLogout}
-            danger
-          />
-        </View>
-
-        {/* Version */}
-        <Text style={styles.version}>cinq v1.0.0</Text>
+        <FadeInView delay={500}>
+          <Text style={styles.version}>Cinq v1.0.0</Text>
+        </FadeInView>
       </ScrollView>
     </SafeAreaView>
   );
@@ -171,12 +189,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  backIcon: {
-    fontSize: 24,
-    color: colors.text,
-  },
   content: {
     flex: 1,
+  },
+  backIcon: {
+    fontSize: 28,
+    color: colors.text,
   },
   profileSection: {
     alignItems: 'center',
@@ -194,14 +212,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   avatarText: {
-    ...typography.h1,
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.white,
   },
-  userName: {
-    ...typography.h3,
+  profileName: {
+    ...typography.h2,
     color: colors.text,
   },
-  userEmail: {
+  profileEmail: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.xs,
@@ -210,24 +229,24 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
   sectionTitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
+    ...typography.bodySmall,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.white,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   settingIcon: {
-    fontSize: 20,
+    fontSize: 24,
     marginRight: spacing.md,
   },
   settingContent: {
@@ -236,22 +255,23 @@ const styles = StyleSheet.create({
   settingTitle: {
     ...typography.body,
     color: colors.text,
+    fontWeight: '500',
   },
   settingSubtitle: {
-    ...typography.caption,
+    ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: 2,
   },
   chevron: {
-    ...typography.h3,
-    color: colors.textLight,
+    fontSize: 24,
+    color: colors.textMuted,
   },
   dangerText: {
     color: colors.error,
   },
   version: {
-    ...typography.caption,
-    color: colors.textLight,
+    ...typography.bodySmall,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: spacing.xl,
   },

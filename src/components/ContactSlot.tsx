@@ -7,10 +7,10 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme';
 import { Contact } from '../types';
 
-interface ContactSlotProps {
+export interface ContactSlotProps {
   slot: number;
   contact: Contact | null;
-  onPress: () => void;
+  onPress?: () => void;
   onLongPress?: () => void;
   size?: 'small' | 'medium' | 'large';
 }

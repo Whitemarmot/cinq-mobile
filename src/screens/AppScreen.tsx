@@ -1,96 +1,124 @@
 /**
- * App Screen - L'écran principal avec les 5 contacts
+ * App Screen - L'écran principal avec les 5 contacts (avec animations)
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing } from '../theme';
 import { Header, ContactSlot } from '../components';
+import { ScaleInView, PulseView, AnimatedPressable } from '../components/AnimatedComponents';
 import { useContacts, useAuth } from '../hooks';
+import type { MainStackParamList } from '../navigation/types';
 
-interface AppScreenProps {
-  onContactPress: (slot: number) => void;
-  onSettingsPress: () => void;
-}
+type AppNavProp = NativeStackNavigationProp<MainStackParamList>;
 
-export function AppScreen({ onContactPress, onSettingsPress }: AppScreenProps) {
+export function AppScreen() {
+  const navigation = useNavigation<AppNavProp>();
   const { user } = useAuth();
   const { contacts, isLoading } = useContacts();
+
+  const handleContactPress = (slot: number) => {
+    const contact = contacts[slot - 1];
+    const name = contact?.nickname || contact?.contact?.displayName || contact?.contact?.username || `Contact ${slot}`;
+    navigation.navigate('Chat', {
+      conversationId: contact?.id || `conv-${slot}`,
+      contactName: name,
+    });
+  };
+
+  const handleSettingsPress = () => {
+    navigation.navigate('Settings');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <Header
         title="cinq"
         rightIcon={<Text style={styles.settingsIcon}>⚙️</Text>}
-        onRightPress={onSettingsPress}
+        onRightPress={handleSettingsPress}
       />
 
       <View style={styles.content}>
-        <Text style={styles.greeting}>
-          Salut {user?.displayName || user?.username} 👋
-        </Text>
-        <Text style={styles.subtitle}>
-          Tes 5 personnes les plus proches
-        </Text>
+        <Animated.View entering={FadeInDown.duration(500)}>
+          <Text style={styles.greeting}>
+            Salut {user?.displayName || user?.username} 👋
+          </Text>
+          <Text style={styles.subtitle}>
+            Tes 5 personnes les plus proches
+          </Text>
+        </Animated.View>
 
-        {/* Les 5 slots en cercle */}
+        {/* Les 5 slots en cercle avec animations */}
         <View style={styles.circleContainer}>
           {/* Slot 1 - Top */}
-          <View style={[styles.slotPosition, styles.slot1]}>
-            <ContactSlot
-              slot={1}
-              contact={contacts[0]}
-              onPress={() => onContactPress(1)}
-              size="large"
-            />
-          </View>
+          <ScaleInView delay={100} style={[styles.slotPosition, styles.slot1]}>
+            <AnimatedPressable onPress={() => handleContactPress(1)}>
+              <ContactSlot
+                slot={1}
+                contact={contacts[0]}
+                size="large"
+              />
+            </AnimatedPressable>
+          </ScaleInView>
 
           {/* Slot 2 - Top Right */}
-          <View style={[styles.slotPosition, styles.slot2]}>
-            <ContactSlot
-              slot={2}
-              contact={contacts[1]}
-              onPress={() => onContactPress(2)}
-              size="large"
-            />
-          </View>
+          <ScaleInView delay={200} style={[styles.slotPosition, styles.slot2]}>
+            <AnimatedPressable onPress={() => handleContactPress(2)}>
+              <ContactSlot
+                slot={2}
+                contact={contacts[1]}
+                size="large"
+              />
+            </AnimatedPressable>
+          </ScaleInView>
 
           {/* Slot 3 - Bottom Right */}
-          <View style={[styles.slotPosition, styles.slot3]}>
-            <ContactSlot
-              slot={3}
-              contact={contacts[2]}
-              onPress={() => onContactPress(3)}
-              size="large"
-            />
-          </View>
+          <ScaleInView delay={300} style={[styles.slotPosition, styles.slot3]}>
+            <AnimatedPressable onPress={() => handleContactPress(3)}>
+              <ContactSlot
+                slot={3}
+                contact={contacts[2]}
+                size="large"
+              />
+            </AnimatedPressable>
+          </ScaleInView>
 
           {/* Slot 4 - Bottom Left */}
-          <View style={[styles.slotPosition, styles.slot4]}>
-            <ContactSlot
-              slot={4}
-              contact={contacts[3]}
-              onPress={() => onContactPress(4)}
-              size="large"
-            />
-          </View>
+          <ScaleInView delay={400} style={[styles.slotPosition, styles.slot4]}>
+            <AnimatedPressable onPress={() => handleContactPress(4)}>
+              <ContactSlot
+                slot={4}
+                contact={contacts[3]}
+                size="large"
+              />
+            </AnimatedPressable>
+          </ScaleInView>
 
           {/* Slot 5 - Top Left */}
-          <View style={[styles.slotPosition, styles.slot5]}>
-            <ContactSlot
-              slot={5}
-              contact={contacts[4]}
-              onPress={() => onContactPress(5)}
-              size="large"
-            />
-          </View>
+          <ScaleInView delay={500} style={[styles.slotPosition, styles.slot5]}>
+            <AnimatedPressable onPress={() => handleContactPress(5)}>
+              <ContactSlot
+                slot={5}
+                contact={contacts[4]}
+                size="large"
+              />
+            </AnimatedPressable>
+          </ScaleInView>
 
           {/* Center - User avatar or logo */}
-          <View style={styles.center}>
-            <View style={styles.centerCircle}>
-              <Text style={styles.centerText}>5</Text>
-            </View>
-          </View>
+          <Animated.View 
+            entering={ZoomIn.delay(600).springify()} 
+            style={styles.center}
+          >
+            <PulseView duration={2000} minScale={0.95} maxScale={1.05}>
+              <View style={styles.centerCircle}>
+                <Text style={styles.centerText}>5</Text>
+              </View>
+            </PulseView>
+          </Animated.View>
         </View>
       </View>
     </SafeAreaView>
@@ -110,12 +138,14 @@ const styles = StyleSheet.create({
   greeting: {
     ...typography.h2,
     color: colors.text,
+    textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
+    textAlign: 'center',
   },
   settingsIcon: {
     fontSize: 24,

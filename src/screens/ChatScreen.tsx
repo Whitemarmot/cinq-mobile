@@ -1,151 +1,135 @@
 /**
- * Chat Screen - Conversation avec un contact
+ * Chat Screen avec animations
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
   FlatList,
   TextInput,
   TouchableOpacity,
-  Text,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, spacing, borderRadius } from '../theme';
+import Animated, { FadeInUp, FadeInRight, SlideInRight } from 'react-native-reanimated';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { colors, typography, spacing } from '../theme';
 import { Header, MessageBubble } from '../components';
-import { useConversation, useAuth } from '../hooks';
-import { Message } from '../types';
+import { FadeInView } from '../components/AnimatedComponents';
+import { useConversation } from '../hooks/useMessages';
+import type { MainStackParamList } from '../navigation/types';
+import type { Message } from '../types';
+import { useAuth } from '../hooks';
 
-interface ChatScreenProps {
-  conversationId: string;
-  contactName: string;
-  onBack: () => void;
-}
+type ChatRouteProp = RouteProp<MainStackParamList, 'Chat'>;
 
-export function ChatScreen({ conversationId, contactName, onBack }: ChatScreenProps) {
+export function ChatScreen() {
+  const navigation = useNavigation();
+  const route = useRoute<ChatRouteProp>();
+  const { conversationId, contactName } = route.params;
   const { user } = useAuth();
-  const {
-    messages,
-    isLoading,
-    isSending,
-    hasMore,
-    loadMore,
-    sendMessage,
-    markAsRead,
-  } = useConversation(conversationId);
   
+  const { messages, sendMessage, isLoading } = useConversation(conversationId);
   const [inputText, setInputText] = useState('');
-  const flatListRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    markAsRead();
-  }, [markAsRead]);
+  const flatListRef = useRef<FlatList<Message>>(null);
 
   const handleSend = async () => {
+    if (!inputText.trim()) return;
+    
     const text = inputText.trim();
-    if (!text || isSending) return;
-
     setInputText('');
-    try {
-      await sendMessage(text);
-    } catch (error) {
-      // Restaurer le texte en cas d'erreur
-      setInputText(text);
-    }
+    await sendMessage(text);
   };
+
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
+  useEffect(() => {
+    // Scroll to bottom on new messages
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
 
   const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isOwn = item.senderId === user?.id;
-    const nextMessage = messages[index + 1];
-    const showTimestamp = !nextMessage || 
-      nextMessage.senderId !== item.senderId ||
-      new Date(item.createdAt).getTime() - new Date(nextMessage.createdAt).getTime() > 60000;
-
     return (
-      <MessageBubble
-        message={item}
-        isOwn={isOwn}
-        showTimestamp={showTimestamp}
-      />
+      <FadeInView delay={Math.min(index * 50, 300)} style={styles.messageWrapper}>
+        <MessageBubble
+          message={item}
+          isOwn={isOwn}
+        />
+      </FadeInView>
     );
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
+  return (
+    <SafeAreaView style={styles.container}>
+      <Animated.View entering={SlideInRight.duration(300)}>
         <Header
           title={contactName}
           leftIcon={<Text style={styles.backIcon}>←</Text>}
-          onLeftPress={onBack}
+          onLeftPress={handleBack}
         />
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Header
-        title={contactName}
-        leftIcon={<Text style={styles.backIcon}>←</Text>}
-        onLeftPress={onBack}
-      />
+      </Animated.View>
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <FlatList
           ref={flatListRef}
           data={messages}
+          keyExtractor={(item) => item.id}
           renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          inverted
           contentContainerStyle={styles.messagesList}
-          onEndReached={() => hasMore && loadMore()}
-          onEndReachedThreshold={0.3}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>Aucun message</Text>
-              <Text style={styles.emptySubtext}>Dis bonjour ! 👋</Text>
-            </View>
+            <Animated.View 
+              entering={FadeInUp.delay(300)}
+              style={styles.emptyContainer}
+            >
+              <Text style={styles.emptyText}>
+                Aucun message pour l'instant
+              </Text>
+              <Text style={styles.emptySubtext}>
+                Envoie le premier message à {contactName} 💬
+              </Text>
+            </Animated.View>
           }
         />
 
-        {/* Input Bar */}
-        <View style={styles.inputBar}>
+        <Animated.View 
+          entering={FadeInUp.delay(200)}
+          style={styles.inputContainer}
+        >
           <TextInput
             style={styles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Message..."
-            placeholderTextColor={colors.textLight}
+            placeholder="Écris un message..."
+            placeholderTextColor={colors.textMuted}
             multiline
             maxLength={1000}
           />
-          
           <TouchableOpacity
             style={[
               styles.sendButton,
-              (!inputText.trim() || isSending) && styles.sendButtonDisabled,
+              !inputText.trim() && styles.sendButtonDisabled,
             ]}
             onPress={handleSend}
-            disabled={!inputText.trim() || isSending}
+            disabled={!inputText.trim()}
           >
-            {isSending ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <Text style={styles.sendIcon}>➤</Text>
-            )}
+            <Text style={styles.sendIcon}>📤</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -159,52 +143,47 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    color: colors.text,
-  },
   messagesList: {
-    paddingVertical: spacing.md,
+    flexGrow: 1,
+    padding: spacing.md,
   },
-  empty: {
+  messageWrapper: {
+    marginBottom: spacing.sm,
+  },
+  emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-    transform: [{ scaleY: -1 }], // Because list is inverted
+    paddingTop: 100,
   },
   emptyText: {
-    ...typography.h4,
+    ...typography.h3,
     color: colors.textSecondary,
   },
   emptySubtext: {
     ...typography.body,
-    color: colors.textLight,
-    marginTop: spacing.xs,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
-  inputBar: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: spacing.sm,
+    padding: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   input: {
     flex: 1,
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.gray[100],
-    borderRadius: borderRadius.lg,
+    minHeight: 40,
+    maxHeight: 120,
+    backgroundColor: colors.background,
+    borderRadius: 20,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    maxHeight: 100,
     marginRight: spacing.sm,
+    ...typography.body,
+    color: colors.text,
   },
   sendButton: {
     width: 44,
@@ -215,10 +194,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.gray[300],
+    backgroundColor: colors.textMuted,
+    opacity: 0.5,
   },
   sendIcon: {
-    fontSize: 18,
-    color: colors.white,
+    fontSize: 20,
+  },
+  backIcon: {
+    fontSize: 24,
+    color: colors.text,
   },
 });

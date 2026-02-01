@@ -47,6 +47,7 @@ export const colors = {
   text: '#111827',
   textSecondary: '#6B7280',
   textLight: '#9CA3AF',
+  textMuted: '#9CA3AF',
   textDark: '#FFFFFF',
   
   // Borders
